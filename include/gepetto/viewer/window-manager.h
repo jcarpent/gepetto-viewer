@@ -21,9 +21,10 @@ namespace graphics {
     class WindowManager
     {
     private:
-      /** Window Manager class elements counter */
+      /** global Window Manager class elements counter */
       static std::size_t global_num_instances_;
 
+      /** Unique identifier defined by the program */
       const std::string id_;
 
         /** Scene Graphical Group */
@@ -134,6 +135,12 @@ namespace graphics {
         void stopCapture ();
 
         bool writeNodeFile (const std::string& filename);
+
+      /** \brief Set the window name */
+      void windowName (const std::string & window_name);
+
+      /** \brief Get the window name */
+      std::string windowName () const { return viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ()->windowName; }
     };
 } /* namespace graphics */
 

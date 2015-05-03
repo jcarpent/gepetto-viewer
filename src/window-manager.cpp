@@ -31,7 +31,7 @@ namespace graphics {
       osg::TraitsRefPtr traits_ptr = new ::osg::GraphicsContext::Traits;
       osg::DisplaySettings* ds = osg::DisplaySettings::instance().get();
 
-      traits_ptr->windowName = "Gepetto Viewer";
+      traits_ptr->windowName = id_;
       traits_ptr->x = x;
       traits_ptr->y = y;
       traits_ptr->width = width;
@@ -51,18 +51,16 @@ namespace graphics {
 
     void WindowManager::init(osg::GraphicsContextRefPtr gc)
     {
-      std::cout << "Create scene root" << std::endl;
         std::string name = "root";
         scene_ptr_ = ::graphics::GroupNode::create(name);
 
         viewer_ptr_ = new ::osgViewer::Viewer();
 
         /* init main camera */
-      std::cout << "Get main camera" << std::endl;
         main_camera_ = viewer_ptr_->getCamera ();
 
-        gc_ = gc;
         const osg::GraphicsContext::Traits* traits_ptr = gc->getTraits ();
+        gc_ = gc;
         main_camera_->setGraphicsContext(gc);
         main_camera_->setViewport(new osg::Viewport(0,0, traits_ptr->width, traits_ptr->height));
         main_camera_->setProjectionMatrixAsPerspective(
@@ -72,23 +70,22 @@ namespace graphics {
         main_camera_->setReadBuffer(buffer);
 
         /* add camera to the viewer */
-      std::cout << "Create scene data" << std::endl;
         viewer_ptr_->setSceneData ( scene_ptr_->asGroup() );
         viewer_ptr_->setKeyEventSetsDone (0);
 
         viewer_ptr_->setCameraManipulator( new ::osgGA::SphericalManipulator );
 
       viewer_ptr_->setThreadingModel(::osgViewer::ViewerBase::ThreadPerContext);
-      std::cout << "getThreadingModel : " << viewer_ptr_->getThreadingModel() << std::endl;
+
       viewer_ptr_->realize();
     }
 
-    WindowManager::WindowManager () : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
+    WindowManager::WindowManager () : id_ ("Window " + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
         init (0, 0, DEF_WIDTH_WINDOW, DEF_HEIGHT_WINDOW);
     }
 
-    WindowManager::WindowManager (osg::GraphicsContextRefPtr gc) : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
+    WindowManager::WindowManager (osg::GraphicsContextRefPtr gc) : id_ ("Window " + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
         init (gc);
     }
@@ -102,7 +99,7 @@ namespace graphics {
         init (x, y, width, height);
     }
 
-    WindowManager::WindowManager (const WindowManager& other) : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
+    WindowManager::WindowManager (const WindowManager& other) : id_ ("Window " + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
       init ((int) other.getWindowPosition().x(),
             (int) other.getWindowPosition().y(),
@@ -205,15 +202,24 @@ namespace graphics {
     void WindowManager::setWindowDimension (int width,
                                             int height)
     {
-        /* Define new trait dimension of the main camera */
-        const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
-        gc_->resized (traits_ptr->x, traits_ptr->y, width, height);
+      const osg::GraphicsContext::Traits* traits_ptr = viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ();
+
+      typedef osgViewer::Viewer::Windows Windows;
+      Windows windows_list;
+
+      viewer_ptr_->getWindows(windows_list);
+
+      for (Windows::iterator it = windows_list.begin();
+           it != windows_list.end(); ++it)
+      {
+        (*it)->setWindowRectangle(traits_ptr->x, traits_ptr->y, width, height);
+      }
     }
 
     osgVector2 WindowManager::getWindowDimension() const
     {
         osgVector2 dimention;
-        const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
+        const osg::GraphicsContext::Traits* traits_ptr = viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ();
         dimention.x() = (osg::Vec2f::value_type) traits_ptr->width;
         dimention.y() = (osg::Vec2f::value_type) traits_ptr->height;
         return dimention;
@@ -222,16 +228,24 @@ namespace graphics {
     void WindowManager::setWindowPosition (int x_position,
                                            int y_position)
     {
-        /* Define new trait dimension of the main camera */
-        const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
-        gc_->resized (x_position, y_position,
-                traits_ptr->width, traits_ptr->height);
+      const osg::GraphicsContext::Traits* traits_ptr = viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ();
+
+      typedef osgViewer::Viewer::Windows Windows;
+      Windows windows_list;
+
+      viewer_ptr_->getWindows(windows_list);
+
+      for (Windows::iterator it = windows_list.begin();
+           it != windows_list.end(); ++it)
+      {
+        (*it)->setWindowRectangle(x_position, y_position, traits_ptr->width, traits_ptr->height);
+      }
     }
 
     osgVector2 WindowManager::getWindowPosition() const
     {
         osgVector2 position;
-        const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
+        const osg::GraphicsContext::Traits* traits_ptr = viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ();
         position.x() = (osg::Vec2f::value_type) traits_ptr->x;
         position.y() = (osg::Vec2f::value_type) traits_ptr->y;
         return position;
@@ -241,7 +255,6 @@ namespace graphics {
     {
       stopCapture ();
       scene_ptr_.reset();
-      viewer_ptr_.release();
     }
   
   osgViewer::ViewerRefPtr WindowManager::getViewerClone()
@@ -280,6 +293,20 @@ namespace graphics {
   {
     osgDB::Registry::instance ()->loadLibrary ("osgPlugins-3.3.4/osgdb_osgjs.so");
     return osgDB::writeNodeFile (*(viewer_ptr_->getSceneData()), fn);
+  }
+
+  void WindowManager::windowName (const std::string & window_name)
+  {
+    typedef osgViewer::Viewer::Windows Windows;
+    Windows windows_list;
+
+    viewer_ptr_->getWindows(windows_list);
+
+    for (Windows::iterator it = windows_list.begin();
+         it != windows_list.end(); ++it)
+    {
+      (*it)->setWindowName(window_name);
+    }
   }
 
     /* End declaration of public function members */

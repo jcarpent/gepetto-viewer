@@ -10,17 +10,26 @@
 
 #include <osg/Camera>
 #include <osgGA/TrackballManipulator>
+#include <osgGA/SphericalManipulator>
+#include <osgGA/FlightManipulator>
+#include <osgGA/TerrainManipulator>
 #include <osgDB/WriteFile>
+#include <gepetto/viewer/leaf-node-sphere.h>
+
+#include <boost/lexical_cast.hpp>
 
 namespace graphics {
 
+  std::size_t WindowManager::global_num_instances_ = 0;
+
     /* Declaration of private function members */
-    void WindowManager::init(const unsigned int& x,
-                                  const unsigned int& y,
-                                  const unsigned int& width,
-                                  const unsigned int& height)
+    void WindowManager::init(int x,
+                             int y,
+                             int width,
+                             int height)
     {
       osg::TraitsRefPtr traits_ptr = new ::osg::GraphicsContext::Traits;
+      osg::DisplaySettings* ds = osg::DisplaySettings::instance().get();
 
       traits_ptr->windowName = "Gepetto Viewer";
       traits_ptr->x = x;
@@ -29,28 +38,30 @@ namespace graphics {
       traits_ptr->height = height;
       traits_ptr->windowDecoration = true;
       traits_ptr->doubleBuffer = true;
-      traits_ptr->sharedContext = 0;
-      traits_ptr->sampleBuffers = 1;
-      traits_ptr->samples = 1;
-      traits_ptr->readDISPLAY ();
-      traits_ptr->setUndefinedScreenDetailsToDefaultScreen ();
+      traits_ptr->useMultiThreadedOpenGLEngine = false;
 
+      traits_ptr->alpha = ds->getMinimumNumAlphaBits();
+      traits_ptr->stencil = ds->getMinimumNumStencilBits();
+      traits_ptr->sampleBuffers = ds->getMultiSamples();
+      traits_ptr->samples = 4;
       osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext( traits_ptr );
 
-      init (gc.get ());
+      init (gc);
     }
 
-    void WindowManager::init(osg::GraphicsContext* gc)
+    void WindowManager::init(osg::GraphicsContextRefPtr gc)
     {
+      std::cout << "Create scene root" << std::endl;
         std::string name = "root";
         scene_ptr_ = ::graphics::GroupNode::create(name);
 
         viewer_ptr_ = new ::osgViewer::Viewer();
 
         /* init main camera */
+      std::cout << "Get main camera" << std::endl;
         main_camera_ = viewer_ptr_->getCamera ();
 
-        gc_ = osg::GraphicsContextRefPtr (gc);
+        gc_ = gc;
         const osg::GraphicsContext::Traits* traits_ptr = gc->getTraits ();
         main_camera_->setGraphicsContext(gc);
         main_camera_->setViewport(new osg::Viewport(0,0, traits_ptr->width, traits_ptr->height));
@@ -61,36 +72,42 @@ namespace graphics {
         main_camera_->setReadBuffer(buffer);
 
         /* add camera to the viewer */
+      std::cout << "Create scene data" << std::endl;
         viewer_ptr_->setSceneData ( scene_ptr_->asGroup() );
         viewer_ptr_->setKeyEventSetsDone (0);
 
-        viewer_ptr_->setCameraManipulator( new ::osgGA::TrackballManipulator );
+        viewer_ptr_->setCameraManipulator( new ::osgGA::SphericalManipulator );
+
+      viewer_ptr_->setThreadingModel(::osgViewer::ViewerBase::ThreadPerContext);
+      std::cout << "getThreadingModel : " << viewer_ptr_->getThreadingModel() << std::endl;
+      viewer_ptr_->realize();
     }
 
-    WindowManager::WindowManager ()
+    WindowManager::WindowManager () : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
         init (0, 0, DEF_WIDTH_WINDOW, DEF_HEIGHT_WINDOW);
     }
 
-    WindowManager::WindowManager (osg::GraphicsContext* gc)
+    WindowManager::WindowManager (osg::GraphicsContextRefPtr gc) : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
         init (gc);
     }
 
-    WindowManager::WindowManager (const unsigned int& x,
-                                            const unsigned int& y,
-                                            const unsigned int& width,
-                                            const unsigned int& height)
+    WindowManager::WindowManager (int x,
+                                  int y,
+                                  int width,
+                                  int height) :
+    id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
         init (x, y, width, height);
     }
 
-    WindowManager::WindowManager (const WindowManager& other)
+    WindowManager::WindowManager (const WindowManager& other) : id_ ("WindowManager" + ::boost::lexical_cast<std::string>(++global_num_instances_))
     {
-      init ((unsigned int) other.getWindowPosition().x(),
-	    (unsigned int) other.getWindowPosition().y(),
-	    (unsigned int) other.getWindowDimension().x(),
-	    (unsigned int) other.getWindowDimension().y());
+      init ((int) other.getWindowPosition().x(),
+            (int) other.getWindowPosition().y(),
+            (int) other.getWindowDimension().x(),
+            (int) other.getWindowDimension().y());
     }
 
     void WindowManager::initWeakPtr (WindowManagerWeakPtr other_weak_ptr)
@@ -112,10 +129,10 @@ namespace graphics {
         return shared_ptr;
     }
 
-    WindowManagerPtr_t WindowManager::create (const unsigned int& x,
-                                                            const unsigned int& y,
-                                                            const unsigned int& width,
-                                                            const unsigned int& height)
+    WindowManagerPtr_t WindowManager::create (int x,
+                                              int y,
+                                              int width,
+                                              int height)
     {
         WindowManagerPtr_t shared_ptr(new WindowManager(x, y, width, height));
 
@@ -174,8 +191,10 @@ namespace graphics {
 
     bool WindowManager::frame ()
     {
-        viewer_ptr_->frame();
-        return true;
+//      viewer_ptr_->getCamera()->setViewMatrixAsLookAt(osg::Vec3(0,-10,0),
+//                                                      osg::Vec3(0,0,0), osg::Vec3(0,0,1));
+      viewer_ptr_->frame();
+      return true;
     }
 
     bool WindowManager::run ()
@@ -183,8 +202,8 @@ namespace graphics {
         return viewer_ptr_->run();
     }
 
-    void WindowManager::setWindowDimension (const unsigned int& width,
-                                                 const unsigned int& height)
+    void WindowManager::setWindowDimension (int width,
+                                            int height)
     {
         /* Define new trait dimension of the main camera */
         const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
@@ -200,8 +219,8 @@ namespace graphics {
         return dimention;
     }
 
-    void WindowManager::setWindowPosition (const unsigned int& x_position,
-                                                const unsigned int& y_position)
+    void WindowManager::setWindowPosition (int x_position,
+                                           int y_position)
     {
         /* Define new trait dimension of the main camera */
         const osg::GraphicsContext::Traits* traits_ptr = gc_->getTraits ();
@@ -222,12 +241,13 @@ namespace graphics {
     {
       stopCapture ();
       scene_ptr_.reset();
-      viewer_ptr_ = NULL;
+      viewer_ptr_.release();
     }
   
   osgViewer::ViewerRefPtr WindowManager::getViewerClone()
   {
-    return ::osgViewer::ViewerRefPtr(viewer_ptr_.get());
+//    return ::osgViewer::ViewerRefPtr(viewer_ptr_.get());
+    return viewer_ptr_;
   }
   
   void WindowManager::startCapture (const std::string& filename,

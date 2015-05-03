@@ -21,6 +21,10 @@ namespace graphics {
     class WindowManager
     {
     private:
+      /** Window Manager class elements counter */
+      static std::size_t global_num_instances_;
+
+      const std::string id_;
 
         /** Scene Graphical Group */
         GroupNodePtr_t scene_ptr_;
@@ -41,15 +45,15 @@ namespace graphics {
         /** Associated weak pointer */
         WindowManagerWeakPtr weak_ptr_;
 
-        void init(osg::GraphicsContext* gc);
+        void init(osg::GraphicsContextRefPtr gc);
 
-        void init(const unsigned int& x, const unsigned int& y, const unsigned int& width, const unsigned int& height);
+        void init(int x, int y, int width, int height);
 
         WindowManager();
 
-        WindowManager (osg::GraphicsContext* gc);
+        WindowManager (osg::GraphicsContextRefPtr gc);
 
-        WindowManager(const unsigned int& x, const unsigned int& y, const unsigned int& width, const unsigned int& height);
+        WindowManager(int x, int y, int width, int height);
 
         WindowManager(const WindowManager& other);
 
@@ -61,6 +65,8 @@ namespace graphics {
 
     public:
 
+        std::string id () const { return id_; }
+
         /** Create and initialize a graphical engine of type OSG
          */
         static WindowManagerPtr_t create();
@@ -71,7 +77,7 @@ namespace graphics {
 
         /** Create and initialize a graphical engine of type OSG with some parameters : position + dimension
          */
-        static WindowManagerPtr_t create(const unsigned int& x, const unsigned int& y, const unsigned int& width, const unsigned int& height);
+        static WindowManagerPtr_t create(int x, int y, int width, int height);
 
         /** Static method for creating a clone of box other with the copy constructor
          */
@@ -106,10 +112,10 @@ namespace graphics {
         virtual bool run ();
 
         /** Define dimension of the window */
-        virtual void setWindowDimension (const unsigned int& width, const unsigned int& height);
+        virtual void setWindowDimension (int width, int height);
 
         /** Define the window position */
-        virtual void setWindowPosition (const unsigned int& x_position, const unsigned int& y_position);
+        virtual void setWindowPosition (int x_position, int y_position);
 
         /** Return the window x and y position as a 2D vector */
         osgVector2 getWindowPosition () const;

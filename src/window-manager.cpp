@@ -17,6 +17,7 @@
 #include <gepetto/viewer/leaf-node-sphere.h>
 
 #include <boost/lexical_cast.hpp>
+#include <sstream>
 
 namespace graphics {
 
@@ -77,7 +78,18 @@ namespace graphics {
 
       viewer_ptr_->setThreadingModel(::osgViewer::ViewerBase::ThreadPerContext);
 
-      viewer_ptr_->realize();
+      // Create the window
+      viewer_ptr_->realize ();
+
+      // Set the frame rate and its display mode
+      frame_rate_ = 0.;
+      frame_rate_display_mode_ = RATE_IN_WINDOW_TITLE;
+
+      // Init timer
+      current_toc_ = ns (frame_timer_.elapsed ().wall);
+
+      // Achieve one rendering
+      viewer_ptr_->frame ();
     }
 
     WindowManager::WindowManager () : id_ ("Window " + ::boost::lexical_cast<std::string>(++global_num_instances_))
@@ -181,6 +193,16 @@ namespace graphics {
         return result;
     }
 
+  void WindowManager::computeFrameRate ()
+  {
+    typedef us::rep counter_t;
+
+    us loop_duration = boost::chrono::duration_cast<us> (current_toc_ - previous_toc_);
+    counter_t duration_counts = loop_duration.count ();
+
+    frame_rate_ = 1000000. / (double) duration_counts;
+  }
+
     bool WindowManager::done ()
     {
         return  viewer_ptr_->done();
@@ -190,7 +212,15 @@ namespace graphics {
     {
 //      viewer_ptr_->getCamera()->setViewMatrixAsLookAt(osg::Vec3(0,-10,0),
 //                                                      osg::Vec3(0,0,0), osg::Vec3(0,0,1));
-      viewer_ptr_->frame();
+      // Compute frame rate
+      previous_toc_ = current_toc_;
+      current_toc_ = ns (frame_timer_.elapsed ().wall);
+      computeFrameRate ();
+
+      // Update window name if necessary
+      applyWindowName (buildWindowName ());
+
+      viewer_ptr_->frame ();
       return true;
     }
 
@@ -295,18 +325,35 @@ namespace graphics {
     return osgDB::writeNodeFile (*(viewer_ptr_->getSceneData()), fn);
   }
 
-  void WindowManager::windowName (const std::string & window_name)
+  void WindowManager::applyWindowName (const std::string & window_name)
   {
     typedef osgViewer::Viewer::Windows Windows;
     Windows windows_list;
 
-    viewer_ptr_->getWindows(windows_list);
+    viewer_ptr_->getWindows (windows_list);
 
-    for (Windows::iterator it = windows_list.begin();
+    for (Windows::iterator it = windows_list.begin ();
          it != windows_list.end(); ++it)
     {
-      (*it)->setWindowName(window_name);
+      (*it)->setWindowName (window_name);
     }
+  }
+
+  std::string WindowManager::buildWindowName () const
+  {
+    std::string complete_window_name;
+    complete_window_name.append (windowName ());
+
+    if (frame_rate_display_mode_ == RATE_IN_WINDOW_TITLE || frame_rate_display_mode_ == RATE_IN_WINDOW_AND_TITLE)
+    {
+      complete_window_name.append (" - ");
+      std::stringstream ss;
+      ss << (unsigned int) frame_rate_;
+      complete_window_name.append (ss.str ());
+      complete_window_name.append (" fps");
+    }
+
+    return complete_window_name;
   }
 
     /* End declaration of public function members */

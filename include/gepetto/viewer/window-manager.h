@@ -14,18 +14,46 @@
 #include <gepetto/viewer/group-node.h>
 #include <gepetto/viewer/node.h>
 
+#include <boost/chrono.hpp>
+#include <boost/timer/timer.hpp>
+
 namespace graphics {
 
     DEF_CLASS_SMART_PTR(WindowManager)
 
     class WindowManager
     {
+    public:
+      enum FrameRateDisplayMode
+      {
+        NO_RATE = 0,
+        RATE_IN_WINDOW_TITLE,
+        RATE_IN_WINDOW,
+        RATE_IN_WINDOW_AND_TITLE
+      };
+
     private:
+      typedef boost::chrono::nanoseconds ns;
+      typedef boost::chrono::microseconds us;
+      typedef boost::timer::cpu_timer timer;
+
       /** global Window Manager class elements counter */
       static std::size_t global_num_instances_;
 
       /** Unique identifier defined by the program */
       const std::string id_;
+
+      /** Name of the window */
+      std::string window_name_;
+
+      /** Refreshing rate */
+      double frame_rate_;
+      ns current_toc_;
+      ns previous_toc_;
+      timer frame_timer_;
+
+      /** Refreshing rate display mode */
+      FrameRateDisplayMode frame_rate_display_mode_;
 
         /** Scene Graphical Group */
         GroupNodePtr_t scene_ptr_;
@@ -60,9 +88,15 @@ namespace graphics {
 
         /** Initialize weak_ptr */
         void initWeakPtr (WindowManagerWeakPtr other_weak_ptr);
-    protected:
 
+      /** \brief Change effectively the name of the windows associated to the viewer */
+      void applyWindowName (const std::string & window_name);
 
+      /** \brief Build the window name according to the different set options */
+      std::string buildWindowName () const;
+
+      /** \brief Compute the instatenous frame rate, i.e. the frequency between two calls of frame method */
+      void computeFrameRate ();
 
     public:
 
@@ -127,8 +161,6 @@ namespace graphics {
         /** Return a ref to the viewer */
         ::osgViewer::ViewerRefPtr getViewerClone();
 
-        virtual ~WindowManager();
-
         void startCapture (const std::string& filename,
             const std::string& extension);
 
@@ -137,10 +169,21 @@ namespace graphics {
         bool writeNodeFile (const std::string& filename);
 
       /** \brief Set the window name */
-      void windowName (const std::string & window_name);
+      void windowName (const std::string & window_name) { window_name_ = window_name; }
 
       /** \brief Get the window name */
-      std::string windowName () const { return viewer_ptr_->getCamera ()->getGraphicsContext ()->getTraits ()->windowName; }
+      const std::string & windowName () const { return window_name_; }
+
+      /** \brief Return the current frame rate */
+      double frameRate () const { return frame_rate_; }
+
+      /** \brief Set display mode of refreshing rate */
+      void displayRefreshingRate (FrameRateDisplayMode mode) { frame_rate_display_mode_ = mode; }
+      FrameRateDisplayMode displayRefreshingRate () const { return frame_rate_display_mode_; }
+
+      /** \brief Destructor */
+      virtual ~WindowManager();
+
     };
 } /* namespace graphics */
 

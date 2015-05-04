@@ -113,7 +113,7 @@ typedef ::osg::Quat osgQuat;
 
 namespace graphics {
     
-#define DEF_WIDTH_WINDOW 600
+#define DEF_WIDTH_WINDOW 640
 #define DEF_HEIGHT_WINDOW 480
  
     enum VisibilityMode

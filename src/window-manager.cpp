@@ -52,6 +52,9 @@ namespace graphics {
 
     void WindowManager::init(osg::GraphicsContextRefPtr gc)
     {
+      // Set the default window name to id_ value
+      window_name_ = id_;
+
         std::string name = "root";
         scene_ptr_ = ::graphics::GroupNode::create(name);
 

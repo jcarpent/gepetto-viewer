@@ -7,6 +7,7 @@
 //
 
 #include <gepetto/viewer/leaf-node-ground.h>
+#include <osg/Material>
 
 namespace graphics {
     
@@ -85,7 +86,19 @@ namespace graphics {
         
       /* Apply colors */
       setColors(color1_,color2_);
+
+      // Set the diffusing mode of the ground
+      osg::ref_ptr<osg::Material> material = new osg::Material;
+      material->setAmbient(osg::Material::FRONT, osg::Vec4(0.f, 0.f, 0.f, 0.f));
+      material->setDiffuse(osg::Material::FRONT, osg::Vec4(0.3f, 0.3f, 0.3f, 1.f));
+      material->setDiffuse(osg::Material::BACK, osg::Vec4(0.3f, 0.3f, 0.3f, 1.f));
+      material->setSpecular(osg::Material::FRONT_AND_BACK, osg::Vec4(0.f, 0.f, 0.f, 1.f));
+      material->setEmission(osg::Material::FRONT_AND_BACK, osg::Vec4(0.f, 0.0f, 0.f, 1.f));
+      //material->setShininess(osg::Material::FRONT_AND_BACK, 0);
+      material->setColorMode(osg::Material::DIFFUSE);
         
+      grid_geode_ptr_->getOrCreateStateSet()->setAttributeAndModes(material.get (), ::osg::StateAttribute::ON | ::osg::StateAttribute::PROTECTED | osg::StateAttribute::OVERRIDE);
+
 #ifdef DEBUG
       std::cout << getID() << " created" << std::endl;
 #endif

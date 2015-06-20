@@ -76,6 +76,9 @@ namespace graphics {
         viewer_ptr_->setSceneData ( scene_ptr_->asGroup() );
         viewer_ptr_->setKeyEventSetsDone (0);
 
+        //viewer_ptr_->getCamera()->getView()->setLightingMode(osg::View::SKY_LIGHT);
+        viewer_ptr_->getCamera()->getView()->setLightingMode(osg::View::HEADLIGHT);
+
         viewer_ptr_->setCameraManipulator( new ::osgGA::SphericalManipulator );
 
       viewer_ptr_->setThreadingModel(::osgViewer::ViewerBase::ThreadPerContext);

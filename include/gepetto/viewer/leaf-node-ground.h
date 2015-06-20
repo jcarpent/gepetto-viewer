@@ -19,10 +19,10 @@ namespace graphics
     {
     private:
       
-        float length_;
-        float width_;
-        float square_length_;
-        float square_width_;
+        std::size_t nx_;
+        std::size_t ny_;
+        float x_cell_dim_;
+        float y_cell_dim_;
 
         osgVector4 color1_;
         osgVector4 color2_;
@@ -42,13 +42,14 @@ namespace graphics
 
         /** Constructor
          \brief Constructor with all useful parameters
-         \param length : length of demi-axis
-         \param width : width of demi-axis
-         \param square_length : length of a basic square
-         \param square_width : width of a basic square
+         \param nx : number of cells along x axis
+         \param ny : number of cells along y axis
+         \param x_dim : dimension of a cell along x axis
+         \param y_dim : dimension of a cell along y axis
          */
-        LeafNodeGround(const std::string& name, const float& length, const float& width,
-                  const float& square_length, const float& square_width, const osgVector4& color1, const osgVector4& color2);
+        LeafNodeGround(const std::string & name, std::size_t nx, std::size_t ny,
+                       float x_cell_dim, float y_cell_dim, 
+                       const osgVector4 & color1, const osgVector4 & color2);
         
         /** Copy constructor */
         LeafNodeGround(const LeafNodeGround& other);
@@ -60,25 +61,21 @@ namespace graphics
     public:
         
         /** Builder
-         \param length : length of plane
-         \param width : width of plane
          */
-        static LeafNodeGroundPtr_t create(const std::string& name, const float &length, const float &width);
+        static LeafNodeGroundPtr_t create(const std::string& name);
         
         /** Builder
          \brief Constructor with all useful parameters
-         \param length : length of demi-axis
-         \param width : width of demi-axis
-         \param square_length : length of a basic square
-         \param square_width : width of a basic square
-         \param configuration_ptr : configuration of plane
+         \param nx : number of cells along x axis
+         \param ny : number of cells along y axis
+         \param x_dim : dimension of a cell along x axis
+         \param y_dim : dimension of a cell along y axis
+         \param color1 : one of the two colors composing the ground
+         \param color2 : one of the two colors composing the ground
          */
-        static LeafNodeGroundPtr_t create(const std::string& name, const float &length, const float &width,
-                                         const float &square_length, const float &square_width);
-
-        static LeafNodeGroundPtr_t create(const std::string& name, const float &length, const float &width, const float &square_length, const float &square_width, const osgVector4& color1, const osgVector4& color2);
-
-        static LeafNodeGroundPtr_t create(const std::string& name);
+        static LeafNodeGroundPtr_t create(const std::string & name, std::size_t nx, std::size_t ny,
+                                          float x_cell_dim = 1.f, float y_cell_dim = 1.f, 
+                                          const osgVector4 & color1 = osgVector4(0., 0., 0., 1.), const osgVector4 & color2 = osgVector4(1., 1., 1., 1.));
         
         /** Create copy */
         static LeafNodeGroundPtr_t createCopy( const LeafNodeGroundPtr_t &other );
@@ -105,27 +102,21 @@ namespace graphics
          */
         virtual void setColor1(const osgVector4 &color1);
 
-        osgVector4 getColor1() const
-        {
-            return color1_;
-        }
+        const osgVector4 & getColor1() const { return color1_; }
         
         /** inline virtual void setColor2(const ColotSharedPtr &color2_ptr)
          \brief Allow to define color2
          \param color2_ptr : color to apply to second color
          */
-        virtual void setColor2(const osgVector4 &color2);
+        virtual void setColor2(const osgVector4 & color2);
         
-        osgVector4 getColor2() const
-        {
-            return color2_;
-        }
+        const osgVector4 & getColor2() const { return color2_; }
         /** virtual void setColors(const ColorSharedPtr &color1_ptr , const ColorSharedPtr &color2_ptr);
          \brief Allow to define both colors
          \param color1_ptr : color to apply to first color
          \param color2_ptr : color to apply to second color
          */
-        virtual void setColors(const osgVector4 &color1 , const osgVector4 &color2);
+        virtual void setColors(const osgVector4 & color1 , const osgVector4 & color2);
         
         /**
          \brief Virtual method for setting the shadow mode of the object : receive, cast, both or no shadow

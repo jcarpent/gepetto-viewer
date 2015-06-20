@@ -27,6 +27,7 @@
     using namespace graphics;
 
     LeafNodeBoxPtr_t box = LeafNodeBox::create("box1", osgVector3(1.,1.,1.));
+    LeafNodeGroundPtr_t ground = LeafNodeGround::create("ground", 1, 10);
     /*LeafNodeCapsulePtr_t capsule = LeafNodeCapsule::create("capsule1", 1,1);
     LeafNodeConePtr_t cone = LeafNodeCone::create("cone", 1,1);
     LeafNodeCylinderPtr_t cylindre = LeafNodeCylinder::create("cylindre", 1,1);
@@ -79,6 +80,7 @@
     //world->addChild(ground);
     //world->addChild(line);
     world->addChild(box);
+    world->addChild(ground);
     //world->addChild(robot);
     WindowManagerPtr_t gm = WindowManager::create();
     gm->addNode(world);
@@ -87,6 +89,8 @@
     box->deleteLandmark();
     box->addLandmark(2.);
     box->applyConfiguration(osgVector3(0.,0.,0.), osgQuat(0.884,0.306,-0.177,0.306));
+    //box->setLightingMode(LIGHT_INFLUENCE_OFF);
+    //ground->setLightingMode(LIGHT_INFLUENCE_OFF);
     world->addLandmark(1.);
 
     return gm->run();
